@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS // Painel de Controle</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2ee6d6">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NEXUS">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#05070d;
+    --panel:#0c1420;
+    --panel-2:#101b2b;
+    --line:#1c3348;
+    --cyan:#2ee6d6;
+    --cyan-dim:#17756c;
+    --red:#ff4655;
+    --gold:#ffce54;
+    --text:#eaf6f6;
+    --muted:#6f8ba3;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--void);color:var(--text);font-family:'Rajdhani',sans-serif;overflow-x:hidden;}
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:
+      linear-gradient(rgba(46,230,214,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(46,230,214,.035) 1px, transparent 1px);
+    background-size:38px 38px;
+  }
+  h1,h2,h3,.brand,.stat-num,.rank-tag,.tab-item span{font-family:'Orbitron',sans-serif;}
+  .mono{font-family:'Share Tech Mono',monospace;}
+
+  .app{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+  /* SIDEBAR */
+  .sidebar{
+    width:230px;flex-shrink:0;background:linear-gradient(180deg,#0a1018,#060a12);
+    border-right:1px solid var(--line);padding:22px 14px;position:relative;
+  }
+  .brand{display:flex;align-items:center;gap:10px;padding:0 6px 22px;border-bottom:1px solid var(--line);margin-bottom:18px;}
+  .brand .orb{
+    width:30px;height:30px;border-radius:50%;flex-shrink:0;
+    background: conic-gradient(from 90deg, var(--red) 0deg 180deg, #fff 180deg 360deg);
+    position:relative;box-shadow:0 0 14px rgba(255,70,85,.55);
+    animation:spin 6s linear infinite;
+  }
+  .brand .orb::after{content:"";position:absolute;inset:0;margin:auto;width:10px;height:10px;background:#0a1018;border:2px solid var(--cyan);border-radius:50%;top:0;bottom:0;left:0;right:0;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .brand-text{font-size:15px;font-weight:800;letter-spacing:2px;color:#fff;}
+  .brand-text small{display:block;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--cyan);font-weight:400;}
+
+  .tab-item{
+    display:flex;align-items:center;gap:12px;padding:12px 12px;margin-bottom:4px;border-radius:6px;
+    cursor:pointer;color:var(--muted);border-left:3px solid transparent;transition:.15s;
+  }
+  .tab-item:hover{background:rgba(46,230,214,.06);color:var(--text);}
+  .tab-item.active{background:rgba(46,230,214,.09);border-left:3px solid var(--cyan);color:var(--cyan);}
+  .tab-item .ic{width:18px;text-align:center;font-size:15px;}
+  .tab-item span{font-size:12px;letter-spacing:1px;font-weight:600;}
+
+  .sidebar-foot{position:absolute;bottom:18px;left:14px;right:14px;font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;border-top:1px solid var(--line);padding-top:10px;}
+
+  /* MAIN */
+  .content{flex:1;padding:26px 34px 60px;max-width:1180px;}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:26px;}
+  .topbar h1{font-size:22px;letter-spacing:2px;color:#fff;margin:0;}
+  .topbar .sub{color:var(--muted);font-size:12px;margin-top:4px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+  .status-pill{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--line);padding:8px 14px;border-radius:20px;font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--cyan);}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan);animation:pulse 1.6s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+
+  .tab{display:none;animation:fadein .25s ease;}
+  .tab.active{display:block;}
+  @keyframes fadein{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .panel{
+    background:linear-gradient(160deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:10px;padding:20px;position:relative;overflow:hidden;
+  }
+  .panel::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:linear-gradient(90deg,var(--cyan),transparent 60%);}
+  .panel h3{margin:0 0 14px;font-size:13px;letter-spacing:2px;color:var(--cyan);}
+
+  .grid{display:grid;gap:16px;}
+  .g4{grid-template-columns:repeat(4,1fr);}
+  .g2{grid-template-columns:1.3fr 1fr;}
+  @media(max-width:900px){.g4{grid-template-columns:repeat(2,1fr);}.g2{grid-template-columns:1fr;}}
+
+  .stat-card{padding:18px;}
+  .stat-num{font-size:30px;color:#fff;font-weight:800;line-height:1;}
+  .stat-label{font-size:10.5px;color:var(--muted);letter-spacing:2px;margin-top:8px;}
+  .stat-card.red .stat-num{color:var(--red);}
+  .stat-card.gold .stat-num{color:var(--gold);}
+
+  /* radar hero */
+  .radar-wrap{display:flex;align-items:center;gap:26px;padding:24px;}
+  .radar{width:120px;height:120px;border-radius:50%;position:relative;flex-shrink:0;
+    background:radial-gradient(circle, rgba(46,230,214,.08), transparent 70%);
+    border:1px solid var(--line);}
+  .radar::before{content:"";position:absolute;inset:14px;border:1px solid rgba(46,230,214,.25);border-radius:50%;}
+  .radar::after{
+    content:"";position:absolute;inset:0;border-radius:50%;
+    background:conic-gradient(from 0deg, rgba(46,230,214,.55), transparent 40deg);
+    animation:sweep 2.4s linear infinite;
+  }
+  @keyframes sweep{to{transform:rotate(360deg);}}
+  .radar-txt h2{margin:0 0 6px;font-size:18px;color:#fff;}
+  .radar-txt p{margin:0;color:var(--muted);font-size:13px;max-width:420px;}
+
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{text-align:left;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1.5px;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);}
+  td{padding:10px;border-bottom:1px solid rgba(28,51,72,.5);color:var(--text);}
+  tr:hover td{background:rgba(46,230,214,.03);}
+
+  .rank-tag{font-size:9.5px;padding:4px 9px;border-radius:20px;letter-spacing:1px;display:inline-block;border:1px solid;}
+  .r-estagiario{color:#8fb0c4;border-color:#8fb0c4;}
+  .r-moderador{color:#4fd1c5;border-color:#4fd1c5;}
+  .r-superMod{color:#2ee6d6;border-color:#2ee6d6;}
+  .r-admin{color:var(--gold);border-color:var(--gold);}
+  .r-superAdmin{color:#ffb347;border-color:#ffb347;}
+  .r-vpn{color:#b39bff;border-color:#b39bff;}
+  .r-devs{color:#7ee787;border-color:#7ee787;}
+  .r-creators{color:var(--red);border-color:var(--red);}
+
+  input,select,textarea{
+    width:100%;background:#08111c;border:1px solid var(--line);color:var(--text);
+    padding:10px 12px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:13.5px;font-weight:600;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--cyan);}
+  label{font-size:10.5px;color:var(--muted);letter-spacing:1.5px;display:block;margin-bottom:6px;}
+  .field{margin-bottom:14px;}
+
+  .btn{
+    cursor:pointer;border:1px solid var(--cyan);background:rgba(46,230,214,.08);color:var(--cyan);
+    padding:10px 16px;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:11px;letter-spacing:1.5px;
+    transition:.15s;font-weight:600;
+  }
+  .btn:hover{background:var(--cyan);color:#03181a;box-shadow:0 0 16px rgba(46,230,214,.4);}
+  .btn.danger{border-color:var(--red);color:var(--red);}
+  .btn.danger:hover{background:var(--red);color:#1a0507;box-shadow:0 0 16px rgba(255,70,85,.4);}
+  .btn.gold{border-color:var(--gold);color:var(--gold);}
+  .btn.gold:hover{background:var(--gold);color:#1a1204;box-shadow:0 0 16px rgba(255,206,84,.4);}
+  .btn.ghost{border-color:var(--line);color:var(--muted);}
+  .btn.ghost:hover{background:var(--panel-2);color:var(--text);box-shadow:none;}
+  .btn.block{width:100%;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+
+  .game-list{display:flex;flex-direction:column;gap:10px;}
+  .game-card{
+    display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+    background:var(--panel-2);border:1px solid var(--line);border-radius:8px;cursor:pointer;transition:.15s;
+  }
+  .game-card:hover{border-color:var(--cyan);}
+  .game-card.active{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset;}
+  .game-card .gi{display:flex;align-items:center;gap:12px;}
+  .game-card .icon{font-size:22px;}
+  .game-card .name{color:#fff;font-weight:700;font-size:14px;}
+  .game-card .domain{color:var(--muted);font-size:11px;font-family:'Share Tech Mono',monospace;}
+  .flags{display:flex;gap:6px;}
+  .flag{font-size:9px;padding:3px 7px;border-radius:4px;font-family:'Share Tech Mono',monospace;border:1px solid var(--line);color:var(--muted);}
+  .flag.on{border-color:var(--gold);color:var(--gold);}
+
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(28,51,72,.5);}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-row .t-label{font-size:13px;color:var(--text);font-weight:600;}
+  .toggle-row .t-desc{font-size:11px;color:var(--muted);}
+  .switch{width:42px;height:22px;border-radius:20px;background:#0a1420;border:1px solid var(--line);position:relative;cursor:pointer;flex-shrink:0;}
+  .switch::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:.2s;}
+  .switch.on{border-color:var(--gold);background:rgba(255,206,84,.12);}
+  .switch.on::after{transform:translateX(20px);background:var(--gold);box-shadow:0 0 8px var(--gold);}
+
+  .log-box{background:#03080f;border:1px solid var(--line);border-radius:6px;padding:12px;height:150px;overflow-y:auto;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--cyan);}
+  .log-box div{margin-bottom:5px;color:#8fb0c4;}
+  .log-box div b{color:var(--cyan);}
+
+  .empty{color:var(--muted);font-size:12.5px;text-align:center;padding:26px 10px;}
+
+  #toast-container{position:fixed;top:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:10px;}
+  .toast{
+    background:var(--panel);border:1px solid var(--cyan);color:var(--text);padding:12px 16px;border-radius:8px;
+    font-size:12.5px;box-shadow:0 0 20px rgba(46,230,214,.25);animation:slidein .2s ease;min-width:220px;
+  }
+  .toast.danger{border-color:var(--red);box-shadow:0 0 20px rgba(255,70,85,.25);}
+  @keyframes slidein{from{opacity:0;transform:translateX(30px);}to{opacity:1;transform:translateX(0);}}
+
+  .code-box{
+    background:#03080f;border:1px dashed var(--gold);border-radius:6px;padding:14px;font-family:'Share Tech Mono',monospace;
+    color:var(--gold);font-size:13px;letter-spacing:2px;text-align:center;margin-top:10px;
+  }
+  .section-title{font-size:11px;letter-spacing:2px;color:var(--muted);margin:26px 0 10px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:640px){.two-col{grid-template-columns:1fr;}}
+
+  /* AUTH LOCK SCREEN */
+  #lock-screen{
+    position:fixed;inset:0;z-index:2000;background:radial-gradient(circle at 50% 30%, #0a1522, var(--void) 70%);
+    display:flex;align-items:center;justify-content:center;flex-direction:column;
+  }
+  #lock-screen.hidden{display:none;}
+  .lock-orb{
+    width:64px;height:64px;border-radius:50%;margin-bottom:22px;position:relative;
+    background:conic-gradient(from 90deg, var(--red) 0deg 180deg, #fff 180deg 360deg);
+    box-shadow:0 0 30px rgba(255,70,85,.5);animation:spin 6s linear infinite;
+  }
+  .lock-orb::after{content:"";position:absolute;inset:0;margin:auto;width:22px;height:22px;background:#0a1018;border:3px solid var(--cyan);border-radius:50%;top:0;bottom:0;left:0;right:0;}
+  .lock-card{
+    width:340px;max-width:88vw;background:linear-gradient(160deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line);border-radius:12px;padding:30px 28px;text-align:center;
+    box-shadow:0 0 40px rgba(46,230,214,.08);
+  }
+  .lock-card h1{font-size:17px;letter-spacing:3px;color:#fff;margin:0 0 6px;}
+  .lock-card .sub{font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1.5px;margin-bottom:22px;}
+  #lock-pass{text-align:center;letter-spacing:3px;margin-bottom:14px;}
+  #lock-error{font-size:11px;color:var(--red);font-family:'Share Tech Mono',monospace;letter-spacing:1px;min-height:16px;margin-bottom:10px;}
+  .lock-card.shake{animation:shake .35s;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}20%{transform:translateX(-8px);}40%{transform:translateX(8px);}60%{transform:translateX(-6px);}80%{transform:translateX(6px);}
+  }
+  #app-root.locked{display:none;}
+
+  /* GATE MODAL (bloqueio extra da aba Cadastrar Usuário) */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:1500;background:rgba(5,7,13,.8);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .modal-overlay.hidden{display:none;}
+</style>
+</head>
+<body>
+
+<div id="lock-screen">
+  <div class="lock-orb"></div>
+  <div class="lock-card" id="lock-card">
+    <h1>NEXUS</h1>
+    <div class="sub" id="lock-sub">ACESSO RESTRITO // FAÇA LOGIN</div>
+    <div class="field" style="text-align:left;">
+      <label>USUÁRIO</label>
+      <input type="text" id="lock-user" placeholder="nome de usuário" autofocus>
+    </div>
+    <div class="field" style="text-align:left;">
+      <label>SENHA</label>
+      <input type="password" id="lock-pass" placeholder="senha">
+    </div>
+    <div id="lock-error"></div>
+    <button class="btn block" onclick="tryUnlock()">DESBLOQUEAR PAINEL</button>
+  </div>
+</div>
+
+<div id="app-root" class="locked">
+<div class="app">
+
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="orb"></div>
+      <div class="brand-text">NEXUS<small>PAINEL DE CONTROLE</small></div>
+    </div>
+    <nav>
+      <div class="tab-item active" data-tab="home"><span class="ic">◆</span><span>PAINEL INICIAL</span></div>
+      <div class="tab-item" data-tab="users"><span class="ic">◈</span><span>USUÁRIOS</span></div>
+      <div class="tab-item" data-tab="games"><span class="ic">▣</span><span>JOGOS</span></div>
+      <div class="tab-item" data-tab="dev"><span class="ic">⌬</span><span>DESENVOLVER</span></div>
+      <div class="tab-item" data-tab="revenue"><span class="ic">◎</span><span>RENDIMENTOS</span></div>
+      <div class="tab-item" data-tab="announcements"><span class="ic">▲</span><span>ANÚNCIOS</span></div>
+      <div class="tab-item" data-tab="register"><span class="ic">✦</span><span>CADASTRAR USUÁRIO</span></div>
+    </nav>
+    <div class="sidebar-foot">SISTEMA ONLINE<br>BUILD 1.0.0 // MOCKUP LOCAL</div>
+  </aside>
+
+  <main class="content">
+
+    <!-- HOME -->
+    <section id="tab-home" class="tab active">
+      <div class="topbar">
+        <div><h1>PAINEL INICIAL</h1><div class="sub">visão geral do sistema</div></div>
+        <div class="status-pill"><span class="dot"></span> TODOS OS SISTEMAS OPERANTES</div>
+      </div>
+
+      <div class="panel radar-wrap" style="margin-bottom:20px;">
+        <div class="radar"></div>
+        <div class="radar-txt">
+          <h2>Bem-vindo de volta, <span id="home-greet-name">Comandante</span>.</h2>
+          <div class="status-pill" id="home-rank-pill" style="color:var(--gold);border-color:var(--gold);margin-top:10px;display:inline-flex;">CARGO: —</div>
+          <p style="margin-top:12px;">Este é o resumo em tempo real da sua operação: usuários, jogos ativos, eventos aplicados e rendimento acumulado. Use as abas ao lado para gerenciar cada área.</p>
+        </div>
+      </div>
+
+      <div class="grid g4" style="margin-bottom:20px;">
+        <div class="panel stat-card"><div class="stat-num" id="h-users">0</div><div class="stat-label">USUÁRIOS CADASTRADOS</div></div>
+        <div class="panel stat-card gold"><div class="stat-num" id="h-games">0</div><div class="stat-label">JOGOS ATIVOS</div></div>
+        <div class="panel stat-card red"><div class="stat-num" id="h-events">0</div><div class="stat-label">EVENTOS LIGADOS</div></div>
+        <div class="panel stat-card"><div class="stat-num mono" id="h-revenue">R$0</div><div class="stat-label">RENDIMENTO TOTAL</div></div>
+      </div>
+
+      <div class="grid g2">
+        <div class="panel">
+          <h3>ÚLTIMOS JOGOS</h3>
+          <div id="h-game-list" class="game-list"></div>
+        </div>
+        <div class="panel">
+          <h3>REGISTRO DE ATIVIDADE</h3>
+          <div class="log-box" id="h-log"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="export-panel" style="margin-top:20px;">
+        <h3>GRAVAR NO CÓDIGO</h3>
+        <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px;">
+          Os dados já ficam salvos automaticamente para a próxima vez que você abrir o painel por aqui. Se quiser uma versão do arquivo com tudo que você criou (usuários, jogos, rendimentos, anúncios) gravado permanentemente como padrão dentro do próprio código — funcionando mesmo sem essa gravação automática — baixe uma cópia atualizada abaixo.
+        </p>
+        <button class="btn gold" onclick="exportUpdatedPanel()">⬇ BAIXAR PAINEL COM DADOS ATUAIS GRAVADOS</button>
+      </div>
+
+      <div class="panel" style="margin-top:20px;">
+        <h3>INSTALAR COMO APP</h3>
+        <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px;">
+          Este painel é um PWA (Progressive Web App): quando hospedado num endereço próprio (GitHub Pages, Netlify, etc.) e acessado por HTTPS, pode ser instalado como um app de verdade — com ícone na tela inicial ou na área de trabalho, abrindo em janela própria e funcionando offline.
+        </p>
+        <button class="btn" id="install-app-btn" style="display:none;" onclick="installApp()">📲 INSTALAR APP</button>
+        <div id="install-hint" style="font-size:11px;color:var(--muted);margin-top:8px;">Aberto direto do computador (file://), a instalação não fica disponível — é uma restrição de todos os navegadores para PWAs.</div>
+      </div>
+    </section>
+
+    <!-- USERS -->
+    <section id="tab-users" class="tab">
+      <div class="topbar">
+        <div><h1>USUÁRIOS</h1><div class="sub">gerencie perfis e cargos da equipe</div></div>
+      </div>
+
+      <div class="panel" id="users-add-panel" style="margin-bottom:20px;">
+        <h3>ADICIONAR USUÁRIO</h3>
+        <div class="two-col">
+          <div class="field"><label>NOME DE USUÁRIO</label><input id="u-name" placeholder="ex: AshKetchum"></div>
+          <div class="field"><label>CARGO</label>
+            <select id="u-rank">
+              <option>Estagiário</option><option>Moderator</option><option>Super Moderator</option>
+              <option>Admin</option><option>Super Admin</option><option>VPN</option><option>Devs</option><option>Creators</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>SENHA DE ACESSO</label><input id="u-pass" type="text" placeholder="crie uma senha para este usuário"></div>
+        <button class="btn" onclick="addUser()">+ ADICIONAR USUÁRIO</button>
+      </div>
+
+      <div class="panel">
+        <h3>EQUIPE ATUAL</h3>
+        <table>
+          <thead><tr><th>USUÁRIO</th><th>CARGO</th><th>DESDE</th><th>AÇÕES</th></tr></thead>
+          <tbody id="user-rows"></tbody>
+        </table>
+        <div class="empty" id="user-empty" style="display:none;">Nenhum usuário cadastrado ainda.</div>
+      </div>
+    </section>
+
+    <!-- GAMES -->
+    <section id="tab-games" class="tab">
+      <div class="topbar">
+        <div><h1>JOGOS</h1><div class="sub">selecione um jogo para gerenciar</div></div>
+      </div>
+
+      <div class="grid g2">
+        <div class="panel">
+          <h3>MEUS JOGOS</h3>
+          <div class="game-list" id="game-list"></div>
+        </div>
+
+        <div class="panel" id="game-control">
+          <div class="empty">Selecione um jogo à esquerda para ver os controles.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DEV -->
+    <section id="tab-dev" class="tab">
+      <div class="topbar">
+        <div><h1>DESENVOLVER JOGOS</h1><div class="sub">crie um novo jogo para gerenciar no painel</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>NOVO JOGO</h3>
+        <div class="two-col">
+          <div class="field"><label>NOME DO JOGO</label><input id="d-name" placeholder="ex: Pokémon GO"></div>
+          <div class="field"><label>ÍCONE (emoji)</label><input id="d-icon" placeholder="ex: 🎮" maxlength="2"></div>
+        </div>
+        <div class="two-col">
+          <div class="field"><label>DOMÍNIO</label><input id="d-domain" placeholder="ex: pokemongo.nexus.io"></div>
+          <div class="field"><label>DESCRIÇÃO</label><input id="d-desc" placeholder="breve descrição do jogo"></div>
+        </div>
+        <button class="btn" onclick="createGame()">+ CRIAR JOGO</button>
+      </div>
+    </section>
+
+    <!-- REVENUE -->
+    <section id="tab-revenue" class="tab">
+      <div class="topbar">
+        <div><h1>RENDIMENTOS</h1><div class="sub">registre o fluxo de caixa gerado pelos jogos</div></div>
+      </div>
+
+      <div class="panel" id="revenue-add-panel" style="margin-bottom:20px;">
+        <h3>NOVO REGISTRO</h3>
+        <div class="two-col">
+          <div class="field"><label>JOGO</label><select id="r-game"></select></div>
+          <div class="field"><label>VALOR (R$)</label><input id="r-amount" type="number" placeholder="ex: 500"></div>
+        </div>
+        <div class="field"><label>DESCRIÇÃO</label><input id="r-desc" placeholder="ex: doações da comunidade"></div>
+        <button class="btn gold" onclick="addRevenue()">+ ADICIONAR RENDIMENTO</button>
+      </div>
+
+      <div class="grid g4" style="margin-bottom:20px;" id="revenue-summary"></div>
+
+      <div class="panel">
+        <h3>HISTÓRICO</h3>
+        <table>
+          <thead><tr><th>DATA</th><th>JOGO</th><th>DESCRIÇÃO</th><th>VALOR</th><th>AÇÕES</th></tr></thead>
+          <tbody id="revenue-rows"></tbody>
+        </table>
+        <div class="empty" id="revenue-empty" style="display:none;">Nenhum rendimento registrado ainda.</div>
+      </div>
+    </section>
+
+    <!-- ANNOUNCEMENTS -->
+    <section id="tab-announcements" class="tab">
+      <div class="topbar">
+        <div><h1>ANÚNCIOS</h1><div class="sub">lembretes e avisos visíveis para toda a equipe</div></div>
+      </div>
+
+      <div class="panel" id="announce-add-panel" style="margin-bottom:20px;">
+        <h3>NOVO ANÚNCIO</h3>
+        <div class="field"><label>MENSAGEM</label><textarea id="ann-text" rows="3" placeholder="escreva um lembrete ou aviso para a equipe..."></textarea></div>
+        <button class="btn gold" onclick="addAnnouncement()">+ PUBLICAR ANÚNCIO</button>
+      </div>
+
+      <div class="panel">
+        <h3>MURAL DE AVISOS</h3>
+        <div id="announce-list"></div>
+        <div class="empty" id="announce-empty" style="display:none;">Nenhum anúncio publicado ainda.</div>
+      </div>
+    </section>
+
+    <!-- REGISTER -->
+    <section id="tab-register" class="tab">
+      <div class="topbar">
+        <div><h1>CADASTRAR USUÁRIO</h1><div class="sub">gere um link de acesso para enviar a um amigo</div></div>
+      </div>
+
+      <div class="panel" style="max-width:560px;">
+        <h3>NOVO ACESSO</h3>
+        <div class="field"><label>NOME DE USUÁRIO</label><input id="reg-name" placeholder="digite seu nome de usuário"></div>
+        <div class="field"><label>CARGO</label>
+          <select id="reg-rank">
+            <option>Estagiário</option><option>Moderator</option><option>Super Moderator</option>
+            <option>Admin</option><option>Super Admin</option><option>VPN</option><option>Devs</option><option>Creators</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>SENHA DE ACESSO</label>
+          <div style="display:flex;gap:8px;">
+            <input id="reg-pass" type="text" placeholder="crie uma senha ou gere uma">
+            <button class="btn ghost" style="white-space:nowrap;" onclick="genRegPass()">GERAR</button>
+          </div>
+        </div>
+        <button class="btn block" onclick="registerUser()">GERAR LINK DE ACESSO</button>
+        <div id="reg-result"></div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:14px;line-height:1.5;">
+          Quem abrir o link ainda vai precisar digitar usuário e senha — o link só personaliza o painel (nome e cargo) depois de autenticado. Ele só funciona de verdade para outra pessoa se este arquivo estiver hospedado em algum endereço (GitHub Pages, Netlify, etc.); aberto direto do computador (file://), o link abre apenas localmente.
+        </div>
+      </div>
+    </section>
+
+
+  </main>
+</div>
+
+<div id="toast-container"></div>
+
+<div class="modal-overlay hidden" id="register-gate">
+  <div class="lock-card" style="position:relative;">
+    <h1 style="font-size:15px;">ÁREA RESTRITA</h1>
+    <div class="sub">DIGITE A SENHA PARA ACESSAR O CADASTRO</div>
+    <div class="field" style="text-align:left;">
+      <input type="password" id="gate-pass" placeholder="senha">
+    </div>
+    <div id="gate-error" style="font-size:11px;color:var(--red);font-family:'Share Tech Mono',monospace;letter-spacing:1px;min-height:16px;margin-bottom:10px;"></div>
+    <div class="btn-row">
+      <button class="btn" style="flex:1;" onclick="tryGateUnlock()">DESBLOQUEAR</button>
+      <button class="btn ghost" style="flex:1;" onclick="closeGate()">CANCELAR</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- fecha #app-root -->
+
+<script>
+/* ---------- CARGOS E PERMISSÕES ---------- */
+const RANKS = ["Estagiário","Moderator","Super Moderator","Admin","Super Admin","VPN","Devs","Creators"];
+function permsFor(rank){
+  const idx = RANKS.indexOf(rank);
+  return {
+    idx,
+    viewOnly: idx<=0,
+    revenueAdd: idx>=1,
+    revenueRemove: idx>=2,
+    events2x: idx>=3,
+    spawnName: idx>=4,
+    manageAnnouncements: idx>=4,
+    securityCleanup: idx>=5,
+    createLink: idx>=6,
+    fullAdmin: idx>=7
+  };
+}
+let currentUser = {name:"", rank:"Estagiário"}; // mais restritivo até logar
+let pendingSession = null; // dados decodificados do link de acesso — ainda exige login
+
+function findRegisteredUser(name, pass){
+  return state.users.find(u => u.name.toLowerCase() === name.toLowerCase() && u.password === pass);
+}
+
+function tryUnlock(){
+  const userVal = document.getElementById('lock-user').value.trim();
+  const passVal = document.getElementById('lock-pass').value;
+  const err = document.getElementById('lock-error');
+  let matched = null;
+
+  if(pendingSession && userVal.toLowerCase() === pendingSession.name.toLowerCase() && passVal === pendingSession.password){
+    matched = {name:pendingSession.name, rank:pendingSession.rank};
+    if(!state.users.some(u=>u.name.toLowerCase()===pendingSession.name.toLowerCase())){
+      state.users.push({id:nextUserId++, name:pendingSession.name, rank:pendingSession.rank, password:pendingSession.password, since:new Date().toLocaleDateString('pt-BR')});
+    }
+  } else {
+    const u = findRegisteredUser(userVal, passVal);
+    if(u) matched = {name:u.name, rank:u.rank};
+  }
+
+  if(matched){
+    currentUser = matched;
+    state.logs.unshift(`"${currentUser.name}" acessou o painel (cargo: ${currentUser.rank}).`);
+    document.getElementById('lock-screen').classList.add('hidden');
+    document.getElementById('app-root').classList.remove('locked');
+    applyPermissions();
+    renderUsers(); renderGames(); renderRevenue(); renderAnnouncements(); renderHome();
+    saveDB();
+  } else {
+    err.textContent = "USUÁRIO OU SENHA INCORRETOS.";
+    const card = document.getElementById('lock-card');
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    document.getElementById('lock-pass').value='';
+    document.getElementById('lock-pass').focus();
+  }
+}
+document.getElementById('lock-user').addEventListener('keydown', e=>{ if(e.key === 'Enter') document.getElementById('lock-pass').focus(); });
+document.getElementById('lock-pass').addEventListener('keydown', e=>{ if(e.key === 'Enter') tryUnlock(); });
+
+function applyPermissions(){
+  const p = permsFor(currentUser.rank);
+  document.getElementById('home-greet-name').textContent = currentUser.name;
+  document.getElementById('home-rank-pill').textContent = 'CARGO: ' + currentUser.rank;
+
+  document.querySelector('.tab-item[data-tab="dev"]').style.display = p.fullAdmin ? 'flex' : 'none';
+  document.querySelector('.tab-item[data-tab="register"]').style.display = p.createLink ? 'flex' : 'none';
+
+  document.getElementById('users-add-panel').style.display = p.fullAdmin ? 'block' : 'none';
+  document.getElementById('revenue-add-panel').style.display = p.revenueAdd ? 'block' : 'none';
+  document.getElementById('export-panel').style.display = p.fullAdmin ? 'block' : 'none';
+
+  const regRank = document.getElementById('reg-rank');
+  if(regRank){
+    regRank.innerHTML = RANKS.filter((r,i)=> p.fullAdmin || i<=6).map(r=>`<option>${r}</option>`).join('');
+  }
+}
+
+/* ---------- STATE ---------- */
+let state = {
+  users: [
+    {id:1, name:"Comandante", rank:"Creators", password:"Pjnf2311.verse", since:"25/07/2026"}
+  ],
+  games: [
+    {id:1, name:"Pokémon GO", icon:"🎮", domain:"pokemongo.nexus.io", spawn2x:false, lucky2x:false, logs:["Jogo criado no sistema."]}
+  ],
+  revenue: [],
+  announcements: [],
+  logs: ["Painel inicializado."],
+  activeGameId: 1
+};
+let nextUserId=2, nextGameId=2, nextRevId=1, nextAnnId=1;
+
+/* ---------- PERSISTÊNCIA ---------- */
+const DB_KEY = 'nexus-panel-db';
+async function loadDB(){
+  try{
+    const res = await window.storage.get(DB_KEY, true);
+    if(res && res.value){
+      const saved = JSON.parse(res.value);
+      if(saved.users && saved.users.length) state.users = saved.users;
+      if(saved.games && saved.games.length) state.games = saved.games;
+      if(saved.revenue) state.revenue = saved.revenue;
+      if(saved.announcements) state.announcements = saved.announcements;
+      if(saved.logs) state.logs = saved.logs;
+      if(saved.nextUserId) nextUserId = saved.nextUserId;
+      if(saved.nextGameId) nextGameId = saved.nextGameId;
+      if(saved.nextRevId) nextRevId = saved.nextRevId;
+      if(saved.nextAnnId) nextAnnId = saved.nextAnnId;
+      return true;
+    }
+  }catch(e){ /* sem dados salvos ainda — segue com o padrão de fábrica */ }
+  return false;
+}
+async function saveDB(){
+  try{
+    await window.storage.set(DB_KEY, JSON.stringify({
+      users: state.users, games: state.games, revenue: state.revenue, announcements: state.announcements, logs: state.logs,
+      nextUserId, nextGameId, nextRevId, nextAnnId
+    }), true);
+  }catch(e){ /* falha silenciosa — painel continua funcionando só em memória */ }
+}
+
+const rankClass = {
+  "Estagiário":"r-estagiario","Moderator":"r-moderador","Super Moderator":"r-superMod",
+  "Admin":"r-admin","Super Admin":"r-superAdmin","VPN":"r-vpn","Devs":"r-devs","Creators":"r-creators"
+};
+
+/* ---------- NAV ---------- */
+function switchToTab(tab){
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelector(`.tab-item[data-tab="${tab}"]`).classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+document.querySelectorAll('.tab-item').forEach(el=>{
+  el.addEventListener('click', ()=>{
+    if(el.dataset.tab === 'register'){
+      openRegisterGate();
+      return;
+    }
+    switchToTab(el.dataset.tab);
+  });
+});
+
+/* ---------- GATE DA ABA CADASTRAR USUÁRIO ---------- */
+const REGISTER_GATE_PASSWORD = "Nexus.verse";
+function openRegisterGate(){
+  document.getElementById('gate-pass').value='';
+  document.getElementById('gate-error').textContent='';
+  document.getElementById('register-gate').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('gate-pass').focus(), 30);
+}
+function closeGate(){
+  document.getElementById('register-gate').classList.add('hidden');
+}
+function tryGateUnlock(){
+  const val = document.getElementById('gate-pass').value;
+  if(val === REGISTER_GATE_PASSWORD){
+    closeGate();
+    switchToTab('register');
+  } else {
+    document.getElementById('gate-error').textContent = "SENHA INCORRETA.";
+    document.getElementById('gate-pass').value='';
+    document.getElementById('gate-pass').focus();
+  }
+}
+document.getElementById('gate-pass').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') tryGateUnlock();
+  if(e.key === 'Escape') closeGate();
+});
+
+/* ---------- TOAST ---------- */
+function toast(msg, danger=false){
+  const c = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast' + (danger ? ' danger' : '');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(()=>t.remove(), 3200);
+  state.logs.unshift(msg);
+  renderHome();
+  saveDB();
+}
+
+/* ---------- USERS ---------- */
+function addUser(){
+  if(!permsFor(currentUser.rank).fullAdmin){ toast("Seu cargo não permite criar usuários.", true); return; }
+  const name = document.getElementById('u-name').value.trim();
+  const rank = document.getElementById('u-rank').value;
+  const pass = document.getElementById('u-pass').value.trim();
+  if(!name){ toast("Digite um nome de usuário.", true); return; }
+  if(!pass){ toast("Defina uma senha para este usuário.", true); return; }
+  if(state.users.some(u=>u.name.toLowerCase()===name.toLowerCase())){ toast("Já existe um usuário com esse nome.", true); return; }
+  state.users.push({id:nextUserId++, name, rank, password:pass, since: new Date().toLocaleDateString('pt-BR')});
+  document.getElementById('u-name').value='';
+  document.getElementById('u-pass').value='';
+  toast(`Usuário "${name}" adicionado como ${rank}.`);
+  renderUsers();
+}
+function changeRank(id, rank){
+  if(!permsFor(currentUser.rank).fullAdmin){ toast("Seu cargo não permite alterar cargos.", true); return; }
+  const u = state.users.find(u=>u.id===id);
+  u.rank = rank;
+  toast(`Cargo de "${u.name}" alterado para ${rank}.`);
+  renderUsers();
+}
+function removeUser(id){
+  if(!permsFor(currentUser.rank).fullAdmin){ toast("Seu cargo não permite remover usuários.", true); return; }
+  const u = state.users.find(u=>u.id===id);
+  state.users = state.users.filter(u=>u.id!==id);
+  toast(`Usuário "${u.name}" removido.`, true);
+  renderUsers();
+}
+function renderUsers(){
+  const p = permsFor(currentUser.rank);
+  const rows = document.getElementById('user-rows');
+  rows.innerHTML='';
+  document.getElementById('user-empty').style.display = state.users.length? 'none':'block';
+  state.users.forEach(u=>{
+    const tr = document.createElement('tr');
+    const rankCell = p.fullAdmin
+      ? `<select onchange="changeRank(${u.id}, this.value)" style="width:auto;padding:5px 8px;font-size:11px;">
+          ${RANKS.map(r=>`<option ${r===u.rank?'selected':''}>${r}</option>`).join('')}
+        </select>`
+      : `<span class="rank-tag ${rankClass[u.rank]}">${u.rank}</span>`;
+    const actionCell = p.fullAdmin
+      ? `<button class="btn danger" style="padding:6px 10px;font-size:9.5px;" onclick="removeUser(${u.id})">REMOVER</button>`
+      : `<span style="color:var(--muted);font-size:11px;">—</span>`;
+    tr.innerHTML = `
+      <td>${u.name}</td>
+      <td>${rankCell}</td>
+      <td class="mono" style="font-size:11px;color:var(--muted);">${u.since}</td>
+      <td>${actionCell}</td>
+    `;
+    rows.appendChild(tr);
+  });
+  renderHome();
+}
+
+/* ---------- GAMES ---------- */
+function createGame(){
+  if(!permsFor(currentUser.rank).fullAdmin){ toast("Seu cargo não permite criar jogos.", true); return; }
+  const name = document.getElementById('d-name').value.trim();
+  const icon = document.getElementById('d-icon').value.trim() || "🎮";
+  const domain = document.getElementById('d-domain').value.trim() || "sem-dominio.nexus.io";
+  const desc = document.getElementById('d-desc').value.trim();
+  if(!name){ toast("Digite o nome do jogo.", true); return; }
+  const g = {id:nextGameId++, name, icon, domain, spawn2x:false, lucky2x:false, logs:[`Jogo "${name}" criado.`], desc};
+  state.games.push(g);
+  ['d-name','d-icon','d-domain','d-desc'].forEach(id=>document.getElementById(id).value='');
+  toast(`Jogo "${name}" criado com sucesso.`);
+  renderGames(); renderRevenueSelect(); renderHome();
+}
+function selectGame(id){
+  state.activeGameId = id;
+  renderGames();
+}
+function currentGame(){ return state.games.find(g=>g.id===state.activeGameId); }
+
+function toggleSpawn(id){
+  if(!permsFor(currentUser.rank).events2x){ toast("Seu cargo não permite usar eventos 2x.", true); return; }
+  const g = state.games.find(g=>g.id===id);
+  g.spawn2x = !g.spawn2x;
+  g.logs.unshift(g.spawn2x ? "Evento 2x Spawn ATIVADO." : "Evento 2x Spawn desativado.");
+  toast(`${g.name}: 2x Spawn ${g.spawn2x?'ativado':'desativado'}.`);
+  renderGames();
+}
+function toggleLucky(id){
+  if(!permsFor(currentUser.rank).events2x){ toast("Seu cargo não permite usar eventos 2x.", true); return; }
+  const g = state.games.find(g=>g.id===id);
+  g.lucky2x = !g.lucky2x;
+  g.logs.unshift(g.lucky2x ? "Evento 2x Lucky ATIVADO." : "Evento 2x Lucky desativado.");
+  toast(`${g.name}: 2x Lucky ${g.lucky2x?'ativado':'desativado'}.`);
+  renderGames();
+}
+function saveDomain(id){
+  if(!permsFor(currentUser.rank).fullAdmin){ toast("Seu cargo não permite editar o domínio.", true); return; }
+  const g = state.games.find(g=>g.id===id);
+  const val = document.getElementById('gc-domain-'+id).value.trim();
+  if(!val){ toast("Digite um domínio válido.", true); return; }
+  g.domain = val;
+  g.logs.unshift(`Domínio alterado para "${val}".`);
+  toast(`Domínio de ${g.name} atualizado.`);
+  renderGames();
+}
+function securityCleanup(id){
+  if(!permsFor(currentUser.rank).securityCleanup){ toast("Seu cargo não permite fazer limpeza de segurança.", true); return; }
+  const g = state.games.find(g=>g.id===id);
+  g.logs.unshift("Limpeza de segurança executada.");
+  toast(`Limpeza de segurança concluída em ${g.name}.`);
+  renderGames();
+}
+function spawnName(id){
+  if(!permsFor(currentUser.rank).spawnName){ toast("Seu cargo não permite spawnar.", true); return; }
+  const g = state.games.find(g=>g.id===id);
+  const val = document.getElementById('gc-spawn-'+id).value.trim();
+  if(!val){ toast("Digite um nome para spawnar.", true); return; }
+  g.logs.unshift(`Spawn manual: "${val}".`);
+  toast(`"${val}" spawnado em ${g.name}.`);
+  document.getElementById('gc-spawn-'+id).value='';
+  renderGames();
+}
+function deleteGame(id){
+  if(!permsFor(currentUser.rank).fullAdmin){ toast("Seu cargo não permite remover jogos.", true); return; }
+  const g = state.games.find(g=>g.id===id);
+  state.games = state.games.filter(g=>g.id!==id);
+  if(state.activeGameId===id) state.activeGameId = state.games[0]?.id ?? null;
+  toast(`Jogo "${g.name}" removido.`, true);
+  renderGames(); renderRevenueSelect(); renderHome();
+}
+
+function renderGames(){
+  const p = permsFor(currentUser.rank);
+  const list = document.getElementById('game-list');
+  list.innerHTML='';
+  state.games.forEach(g=>{
+    const card = document.createElement('div');
+    card.className = 'game-card' + (g.id===state.activeGameId ? ' active':'');
+    card.onclick = ()=>selectGame(g.id);
+    card.innerHTML = `
+      <div class="gi">
+        <div class="icon">${g.icon}</div>
+        <div><div class="name">${g.name}</div><div class="domain">${g.domain}</div></div>
+      </div>
+      <div class="flags">
+        <span class="flag ${g.spawn2x?'on':''}">2X SPAWN</span>
+        <span class="flag ${g.lucky2x?'on':''}">2X LUCKY</span>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  const ctrl = document.getElementById('game-control');
+  const g = currentGame();
+  if(!g){ ctrl.innerHTML = '<div class="empty">Nenhum jogo selecionado.</div>'; return; }
+
+  let html = `<h3>CONTROLE // ${g.name.toUpperCase()}</h3>`;
+
+  if(p.fullAdmin){
+    html += `
+    <div class="field">
+      <label>DOMÍNIO</label>
+      <div style="display:flex;gap:8px;">
+        <input id="gc-domain-${g.id}" value="${g.domain}">
+        <button class="btn ghost" style="white-space:nowrap;" onclick="saveDomain(${g.id})">SALVAR</button>
+      </div>
+    </div>`;
+  } else {
+    html += `<div class="field"><label>DOMÍNIO</label><input value="${g.domain}" disabled></div>`;
+  }
+
+  if(p.events2x){
+    html += `
+    <div class="toggle-row">
+      <div><div class="t-label">2x Spawn</div><div class="t-desc">Dobra a taxa de aparição no jogo</div></div>
+      <div class="switch ${g.spawn2x?'on':''}" onclick="toggleSpawn(${g.id})"></div>
+    </div>
+    <div class="toggle-row">
+      <div><div class="t-label">2x Lucky</div><div class="t-desc">Dobra a chance de itens/spawns especiais</div></div>
+      <div class="switch ${g.lucky2x?'on':''}" onclick="toggleLucky(${g.id})"></div>
+    </div>`;
+  } else {
+    html += `
+    <div class="toggle-row"><div><div class="t-label">2x Spawn</div><div class="t-desc">${g.spawn2x?'Ativado':'Desativado'} — sem permissão para alterar</div></div></div>
+    <div class="toggle-row"><div><div class="t-label">2x Lucky</div><div class="t-desc">${g.lucky2x?'Ativado':'Desativado'} — sem permissão para alterar</div></div></div>`;
+  }
+
+  if(p.spawnName){
+    html += `
+    <div class="field" style="margin-top:14px;">
+      <label>SPAWNAR (nome)</label>
+      <div style="display:flex;gap:8px;">
+        <input id="gc-spawn-${g.id}" placeholder="ex: Mewtwo">
+        <button class="btn gold" style="white-space:nowrap;" onclick="spawnName(${g.id})">SPAWNAR</button>
+      </div>
+    </div>`;
+  }
+
+  let btnRow = '';
+  if(p.securityCleanup) btnRow += `<button class="btn danger" onclick="securityCleanup(${g.id})">LIMPEZA DE SEGURANÇA</button>`;
+  if(p.fullAdmin) btnRow += `<button class="btn ghost" onclick="deleteGame(${g.id})">REMOVER JOGO</button>`;
+  if(btnRow) html += `<div class="btn-row">${btnRow}</div>`;
+
+  if(p.viewOnly){
+    html += `<div style="font-size:11px;color:var(--muted);margin-top:10px;">Seu cargo (${currentUser.rank}) tem acesso somente para visualização.</div>`;
+  }
+
+  html += `
+    <div class="section-title">LOG DO JOGO</div>
+    <div class="log-box">${g.logs.map(l=>`<div><b>&gt;</b> ${l}</div>`).join('') || '<div>Sem atividade ainda.</div>'}</div>
+  `;
+  ctrl.innerHTML = html;
+}
+
+/* ---------- REVENUE ---------- */
+function renderRevenueSelect(){
+  const sel = document.getElementById('r-game');
+  sel.innerHTML = state.games.map(g=>`<option value="${g.id}">${g.name}</option>`).join('');
+}
+function addRevenue(){
+  if(!permsFor(currentUser.rank).revenueAdd){ toast("Seu cargo não permite adicionar rendimentos.", true); return; }
+  const gameId = parseInt(document.getElementById('r-game').value);
+  const amount = parseFloat(document.getElementById('r-amount').value);
+  const desc = document.getElementById('r-desc').value.trim();
+  if(!gameId || !amount){ toast("Preencha jogo e valor.", true); return; }
+  state.revenue.push({id:nextRevId++, gameId, amount, desc, date:new Date().toLocaleDateString('pt-BR')});
+  document.getElementById('r-amount').value='';
+  document.getElementById('r-desc').value='';
+  toast(`Rendimento de R$${amount.toFixed(2)} registrado.`);
+  renderRevenue();
+}
+function removeRevenue(id){
+  if(!permsFor(currentUser.rank).revenueRemove){ toast("Seu cargo não permite remover rendimentos.", true); return; }
+  state.revenue = state.revenue.filter(r=>r.id!==id);
+  toast("Registro de rendimento removido.", true);
+  renderRevenue();
+}
+function renderRevenue(){
+  const p = permsFor(currentUser.rank);
+  const rows = document.getElementById('revenue-rows');
+  rows.innerHTML='';
+  document.getElementById('revenue-empty').style.display = state.revenue.length? 'none':'block';
+  state.revenue.slice().reverse().forEach(r=>{
+    const g = state.games.find(g=>g.id===r.gameId);
+    const tr = document.createElement('tr');
+    const actionCell = p.revenueRemove
+      ? `<button class="btn danger" style="padding:6px 10px;font-size:9.5px;" onclick="removeRevenue(${r.id})">REMOVER</button>`
+      : `<span style="color:var(--muted);font-size:11px;">—</span>`;
+    tr.innerHTML = `<td class="mono" style="font-size:11px;color:var(--muted);">${r.date}</td>
+      <td>${g? g.icon+' '+g.name : '—'}</td><td>${r.desc||'—'}</td>
+      <td class="mono" style="color:var(--gold);">R$${r.amount.toFixed(2)}</td>
+      <td>${actionCell}</td>`;
+    rows.appendChild(tr);
+  });
+
+  const summary = document.getElementById('revenue-summary');
+  const total = state.revenue.reduce((s,r)=>s+r.amount,0);
+  const perGame = state.games.map(g=>({
+    g, total: state.revenue.filter(r=>r.gameId===g.id).reduce((s,r)=>s+r.amount,0)
+  }));
+  summary.innerHTML = `
+    <div class="panel stat-card gold"><div class="stat-num mono">R$${total.toFixed(2)}</div><div class="stat-label">TOTAL GERAL</div></div>
+    ${perGame.slice(0,3).map(p=>`
+      <div class="panel stat-card"><div class="stat-num mono" style="font-size:22px;">R$${p.total.toFixed(2)}</div><div class="stat-label">${p.g.icon} ${p.g.name.toUpperCase()}</div></div>
+    `).join('')}
+  `;
+  renderHome();
+}
+
+/* ---------- ANNOUNCEMENTS ---------- */
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+function addAnnouncement(){
+  if(!permsFor(currentUser.rank).manageAnnouncements){ toast("Seu cargo não permite publicar anúncios.", true); return; }
+  const text = document.getElementById('ann-text').value.trim();
+  if(!text){ toast("Escreva uma mensagem para o anúncio.", true); return; }
+  state.announcements.unshift({id:nextAnnId++, text, author:currentUser.name, rank:currentUser.rank, date:new Date().toLocaleString('pt-BR')});
+  document.getElementById('ann-text').value='';
+  toast("Anúncio publicado.");
+  renderAnnouncements();
+}
+function removeAnnouncement(id){
+  if(!permsFor(currentUser.rank).manageAnnouncements){ toast("Seu cargo não permite remover anúncios.", true); return; }
+  state.announcements = state.announcements.filter(a=>a.id!==id);
+  toast("Anúncio removido.", true);
+  renderAnnouncements();
+}
+function renderAnnouncements(){
+  const p = permsFor(currentUser.rank);
+  document.getElementById('announce-add-panel').style.display = p.manageAnnouncements ? 'block' : 'none';
+  const list = document.getElementById('announce-list');
+  document.getElementById('announce-empty').style.display = state.announcements.length ? 'none' : 'block';
+  list.innerHTML = state.announcements.map(a=>`
+    <div class="panel" style="margin-bottom:12px;padding:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;">
+        <div style="font-size:13.5px;line-height:1.5;white-space:pre-wrap;flex:1;">${escapeHtml(a.text)}</div>
+        ${p.manageAnnouncements ? `<button class="btn danger" style="padding:5px 9px;font-size:9px;flex-shrink:0;" onclick="removeAnnouncement(${a.id})">X</button>` : ''}
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:10px;font-family:'Share Tech Mono',monospace;">— ${escapeHtml(a.author)} (${a.rank}) · ${a.date}</div>
+    </div>
+  `).join('');
+}
+
+/* ---------- REGISTER ---------- */
+function genRegPass(){
+  const pass = Math.random().toString(36).substring(2,6) + Math.floor(Math.random()*90+10) + '.verse';
+  document.getElementById('reg-pass').value = pass;
+}
+function registerUser(){
+  const p = permsFor(currentUser.rank);
+  if(!p.createLink){ toast("Seu cargo não permite gerar links de acesso.", true); return; }
+  const name = document.getElementById('reg-name').value.trim();
+  const rank = document.getElementById('reg-rank').value;
+  let pass = document.getElementById('reg-pass').value.trim();
+  if(!name){ toast("Digite um nome de usuário.", true); return; }
+  if(!p.fullAdmin && rank === "Creators"){ toast("Seu cargo (Devs) só pode gerar acessos até o cargo Devs.", true); return; }
+  if(state.users.some(u=>u.name.toLowerCase()===name.toLowerCase())){ toast("Já existe um usuário com esse nome.", true); return; }
+  if(!pass){ genRegPass(); pass = document.getElementById('reg-pass').value; }
+  state.users.push({id:nextUserId++, name, rank, password:pass, since:new Date().toLocaleDateString('pt-BR')});
+
+  const payload = btoa(unescape(encodeURIComponent(JSON.stringify({n:name, r:rank, p:pass}))));
+  const baseUrl = window.location.origin + window.location.pathname;
+  const link = `${baseUrl}?acesso=${payload}`;
+
+  document.getElementById('reg-result').innerHTML = `
+    <div class="code-box">USUÁRIO: ${name}<br>SENHA: ${pass}</div>
+    <div class="field" style="margin-top:14px;">
+      <label>LINK DE ACESSO (envie este link para o amigo)</label>
+      <div style="display:flex;gap:8px;">
+        <input id="reg-link" value="${link}" readonly onclick="this.select()">
+        <button class="btn ghost" style="white-space:nowrap;" onclick="copyLink()">COPIAR</button>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px;">Envie o link + a senha acima para o seu amigo. Ao abrir o link, o campo de usuário já vem preenchido com <b style="color:var(--gold);">${name}</b> — ele só precisa digitar a senha para entrar, já com as permissões do cargo <b style="color:var(--gold);">${rank}</b>.</div>
+  `;
+  toast(`Usuário "${name}" e link de acesso gerados.`);
+  document.getElementById('reg-name').value='';
+  document.getElementById('reg-pass').value='';
+  renderUsers();
+}
+function copyLink(){
+  const input = document.getElementById('reg-link');
+  input.select();
+  navigator.clipboard.writeText(input.value).then(()=>{
+    toast("Link copiado para a área de transferência.");
+  }).catch(()=>{
+    toast("Não foi possível copiar automaticamente. Selecione e copie manualmente.", true);
+  });
+}
+
+/* ---------- LINK DE ACESSO PERSONALIZADO (ainda exige login) ---------- */
+function parseAccessLink(){
+  const params = new URLSearchParams(window.location.search);
+  const token = params.get('acesso');
+  if(!token) return;
+  try{
+    const data = JSON.parse(decodeURIComponent(escape(atob(token))));
+    if(data.n && data.r && data.p && RANKS.includes(data.r)){
+      pendingSession = {name:data.n, rank:data.r, password:data.p};
+      const userField = document.getElementById('lock-user');
+      userField.value = data.n;
+      userField.readOnly = true;
+      document.getElementById('lock-sub').textContent = `ACESSO DE "${data.n.toUpperCase()}" // INSIRA A SENHA`;
+      document.getElementById('lock-pass').focus();
+    }
+  }catch(e){
+    /* token inválido — ignora e segue com o login padrão */
+  }
+}
+
+/* ---------- GRAVAR NO CÓDIGO (exportar cópia atualizada do arquivo) ---------- */
+function safeJSON(obj){
+  // evita que texto digitado por usuários (ex: em anúncios) feche a tag <script> sem querer
+  return JSON.stringify(obj).replace(/<\/script/gi, '<\\/script');
+}
+function exportUpdatedPanel(){
+  if(!permsFor(currentUser.rank).fullAdmin){ toast("Seu cargo não permite gravar o painel no código.", true); return; }
+  try{
+    const newStateBlock =
+`let state = {
+  users: ${safeJSON(state.users)},
+  games: ${safeJSON(state.games)},
+  revenue: ${safeJSON(state.revenue)},
+  announcements: ${safeJSON(state.announcements)},
+  logs: ${safeJSON(state.logs.slice(0,30))},
+  activeGameId: ${state.activeGameId}
+};
+let nextUserId=${nextUserId}, nextGameId=${nextGameId}, nextRevId=${nextRevId}, nextAnnId=${nextAnnId};`;
+
+    let html = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    const re = /let state = \{[\s\S]*?\};\s*\nlet nextUserId=\d+, nextGameId=\d+, nextRevId=\d+, nextAnnId=\d+;/;
+    if(!re.test(html)){
+      toast("Não foi possível localizar o bloco de dados no código para gravar.", true);
+      return;
+    }
+    html = html.replace(re, newStateBlock);
+
+    const blob = new Blob([html], {type:'text/html'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'painel-nexus-atualizado.html';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast("Nova cópia do painel baixada com os dados atuais gravados no código.");
+  }catch(e){
+    toast("Erro ao gravar o painel atualizado.", true);
+  }
+}
+
+/* ---------- HOME ---------- */
+function renderHome(){
+  document.getElementById('h-users').textContent = state.users.length;
+  document.getElementById('h-games').textContent = state.games.length;
+  document.getElementById('h-events').textContent = state.games.filter(g=>g.spawn2x||g.lucky2x).length;
+  document.getElementById('h-revenue').textContent = 'R$' + state.revenue.reduce((s,r)=>s+r.amount,0).toFixed(2);
+
+  const hgl = document.getElementById('h-game-list');
+  hgl.innerHTML = state.games.slice(0,4).map(g=>`
+    <div class="game-card" style="cursor:default;">
+      <div class="gi"><div class="icon">${g.icon}</div><div><div class="name">${g.name}</div><div class="domain">${g.domain}</div></div></div>
+      <div class="flags"><span class="flag ${g.spawn2x?'on':''}">2X SPAWN</span><span class="flag ${g.lucky2x?'on':''}">2X LUCKY</span></div>
+    </div>
+  `).join('') || '<div class="empty">Nenhum jogo criado ainda.</div>';
+
+  const log = document.getElementById('h-log');
+  log.innerHTML = state.logs.slice(0,12).map(l=>`<div><b>&gt;</b> ${l}</div>`).join('');
+}
+
+/* ---------- PWA: INSTALAÇÃO E SERVICE WORKER ---------- */
+let deferredInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (e)=>{
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const btn = document.getElementById('install-app-btn');
+  const hint = document.getElementById('install-hint');
+  if(btn){ btn.style.display = 'inline-flex'; }
+  if(hint){ hint.style.display = 'none'; }
+});
+function installApp(){
+  if(!deferredInstallPrompt){ toast("Instalação não disponível neste navegador (ou o app já está instalado).", true); return; }
+  deferredInstallPrompt.prompt();
+  deferredInstallPrompt.userChoice.finally(()=>{ deferredInstallPrompt = null; });
+}
+if('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('service-worker.js').catch(()=>{});
+  });
+}
+
+/* ---------- INIT ---------- */
+async function init(){
+  parseAccessLink();
+  const hadSavedData = await loadDB();
+  if(!hadSavedData) saveDB(); // primeira vez: persiste o estado padrão (com o Comandante já cadastrado)
+  renderUsers();
+  renderGames();
+  renderRevenueSelect();
+  renderRevenue();
+  renderAnnouncements();
+  renderHome();
+}
+init();
+</script>
+</body>
+</html>
